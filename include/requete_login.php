@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/connexion.php';
+require_once __DIR__ . '/fonctions_sql.php';
 
 // Enregistre l'erreur en session puis renvoie sur le formulaire
 function retourConnexion(string $erreur): void
@@ -23,15 +24,13 @@ if ($identifiant === '' || $motDePasse === '') {
 }
 
 try {
-    $stmt = $pdo->prepare('SELECT id, identifiant, mdp_hash FROM utilisateur WHERE identifiant = ?');
-    $stmt->execute([$identifiant]);
-    $utilisateur = $stmt->fetch();
+    $utilisateur = authentifierUtilisateur($pdo, $identifiant, $motDePasse);
 } catch (PDOException $e) {
     error_log('Requête de connexion : ' . $e->getMessage());
     retourConnexion('Erreur lors de la connexion.');
 }
 
-if (!$utilisateur || !password_verify($motDePasse, $utilisateur['mdp_hash'])) {
+if ($utilisateur === null) {
     retourConnexion('Identifiant ou mot de passe incorrect.');
 }
 

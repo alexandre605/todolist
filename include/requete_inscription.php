@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/connexion.php';
+require_once __DIR__ . '/fonctions_sql.php';
 
 // Enregistre l'erreur en session puis renvoie sur le formulaire
 function retourInscription(string $erreur): void
@@ -33,16 +34,11 @@ if ($motDePasse !== $confirmation) {
 }
 
 try {
-    // Vérifie si l'identifiant existe déjà (la comparaison ignore la casse)
-    $stmt = $pdo->prepare('SELECT id FROM utilisateur WHERE identifiant = ?');
-    $stmt->execute([$identifiant]);
-    if ($stmt->fetch()) {
+    if (identifiantExiste($pdo, $identifiant)) {
         retourInscription('Cet identifiant est déjà utilisé.');
     }
 
-    $stmt = $pdo->prepare('INSERT INTO utilisateur (identifiant, mdp_hash) VALUES (?, ?)');
-    $stmt->execute([$identifiant, password_hash($motDePasse, PASSWORD_DEFAULT)]);
-    $idNouveau = (int) $pdo->lastInsertId();
+    $idNouveau = creerUtilisateur($pdo, $identifiant, $motDePasse);
 } catch (PDOException $e) {
     // SQLSTATE 23000 : doublon détecté par la contrainte UNIQUE (inscriptions simultanées)
     if ($e->getCode() === '23000') {
